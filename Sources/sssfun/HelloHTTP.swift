@@ -10,6 +10,24 @@ let jsonPost = """
 let jsonData = jsonPost.data(using: .utf8)
 
 
+func echo(request: HTTPRequest, response: HTTPResponseWriter ) -> HTTPBodyProcessing {
+    response.writeHeader(status: .ok)
+    return .processBody { (chunk, stop) in
+        switch chunk {
+        case .chunk(let data, let finishedProcessing):
+            print(data)
+            response.writeBody(data) { _ in
+                finishedProcessing()
+            }
+        case .end:
+            response.done()
+        default:
+            stop = true
+            response.abort()
+        }
+    }
+}
+
 
 
 func hello(request: HTTPRequest, response: HTTPResponseWriter) -> HTTPBodyProcessing {
@@ -27,16 +45,47 @@ func hello(request: HTTPRequest, response: HTTPResponseWriter) -> HTTPBodyProces
     print(request)
 
     response.writeHeader(status: .ok)
-    
+
+
     if request.method == "GET" && request.target == "/getJson" {
         let palavrasBD = fbase.get(path:"palavras/-LNIAqCcpSHZz-uVKnnW")
         let strPalavras = palavrasBD as! String
         response.writeBody(strPalavras)
-    }else if request.method == "POST" {
+    }else if request.method == "GET" && request.target == "/getHighScore"{
+        let pontuacao = fbase.get(path:"highscore")
+        let dict:[String:Any] = pontuacao as! [String:Any]
+        
+        var str: String = ""
+
+        dict.forEach { word in
+            let valor = word.value as! String
+            str += valor + ","
+        }
+        str.removeLast()
+        response.writeBody(str)
+
+    }
+    
+    else if request.method == "POST" {
         response.writeBody(jsonPost)
+        return .processBody{(chunk,stop) in
+        switch chunk{
+            case .chunk(let data, let finishedProcessing):
+                print ("sdasdsadadasd")
+                print(data as! AnyObject as! Data)
+            
+            case .end:
+                response.done()
+            default:
+                stop = true
+                response.abort()    
+        }
+    
+    }
     }
 
     response.done()
-    // response.abort()
     return .discardBody
+    // response.abort()
+    
 }
