@@ -1,6 +1,7 @@
 import Foundation
 import HTTP
 import FirebaseSwift
+import Dispatch
 
 
 let jsonPost = """
@@ -8,25 +9,7 @@ let jsonPost = """
 """
 
 let jsonData = jsonPost.data(using: .utf8)
-
-
-func echo(request: HTTPRequest, response: HTTPResponseWriter ) -> HTTPBodyProcessing {
-    response.writeHeader(status: .ok)
-    return .processBody { (chunk, stop) in
-        switch chunk {
-        case .chunk(let data, let finishedProcessing):
-            print(data)
-            response.writeBody(data) { _ in
-                finishedProcessing()
-            }
-        case .end:
-            response.done()
-        default:
-            stop = true
-            response.abort()
-        }
-    }
-}
+git
 
 
 
@@ -35,8 +18,7 @@ func hello(request: HTTPRequest, response: HTTPResponseWriter) -> HTTPBodyProces
     let fbase = Firebase(baseURL: "https://projeto1lp-853d4.firebaseio.com/")
     fbase.auth = "xUlnymKPWXZOCzHlsgmtomeIZANUQtFmVO5QSbm4"
 
-    let coiso = fbase.get(path:"highscore")
-    print("\n\n\ncoiso:\(coiso!)\n\n\n")
+    // let coiso = fbase.get(path:"highscore")
 
     print("method:\(request.method)\n\n")
     print("target:\(request.target)\n\n")
@@ -62,6 +44,8 @@ func hello(request: HTTPRequest, response: HTTPResponseWriter) -> HTTPBodyProces
             str += valor + ","
         }
         str.removeLast()
+        print("minhaSring\(str)")
+
         response.writeBody(str)
 
     }
@@ -72,7 +56,17 @@ func hello(request: HTTPRequest, response: HTTPResponseWriter) -> HTTPBodyProces
         switch chunk{
             case .chunk(let data, let finishedProcessing):
                 print ("sdasdsadadasd")
-                print(data as! AnyObject as! Data)
+
+                var senhorAmado = Data(capacity: 31)
+    
+                data.forEach{ coisa in
+                    senhorAmado.append(coisa)
+                }
+                let strRecebida = String(data: senhorAmado, encoding: .utf8)!
+                print(strRecebida)
+                let result = fbase.post(path: "highscore", value: strRecebida)
+
+                response.done()
             
             case .end:
                 response.done()
